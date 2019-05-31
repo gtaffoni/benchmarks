@@ -67,10 +67,10 @@ $(PROG): $(OBJECTS)
 	@echo ' '
 
 %.o: %.c
-	@echo $(SYSTYPE)
 	$(CC) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR)  -c $< -o $@
 
-
+%: %.o
+	$(CC) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $< -o $@
 
 clean:
 	rm -rf $(PROG) $(OBJECTS) $(ASSEMBLER)
