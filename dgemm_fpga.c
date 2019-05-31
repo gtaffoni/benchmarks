@@ -11,15 +11,15 @@ void print_matrix(double **A, int *M, int *N);
 
 int main(int argc, char *argv[]) {
         double **A, **B, **C, **D;
-        double alpha=1.0, beta=1.;
+        double alpha=1.0, beta=0.5;
         double *tmp;
-        double startTime;
+        double startTime = 0.0;
         /* For OpenBlas compatibility */
         int world_rank, world_size;
         #ifdef _MMX_
-          int NFPGA=_MMX_;
+        int NFPGA=_MMX_;
         #else
-           int NFPGA=2;
+        int NFPGA=2;
         #endif
         int i;
         int j;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
          */
         if (world_rank == 0) {
 #ifdef _USE_OPENMP_
-        #pragma omp parallel for shared(A,B,C,D) private(i,j)   schedule (static, int chunkSize = 10)
+        #pragma omp parallel for shared(A,B,D) private(i,j) schedule (static, 10)
 #endif
                 for (int i=0; i<N; i++) {
                         for (int j=0; j<N; j++) {
@@ -108,9 +108,9 @@ int main(int argc, char *argv[]) {
                                 B[i][j] = rand() % 101 - 50;;
                                 D[i][j] = rand() % 101 - 50;;
 #else
-                                A[i][j] = 1.;//rand() % 101 - 50;;
-                                B[i][j] = 1.;//rand() % 101 - 50;;
-                                D[i][j] = 1.;//rand() % 101 - 50;;
+                                A[i][j] = 1.0;
+                                B[i][j] = 1.0;
+                                D[i][j] = 1.0;
 
 #endif
                         }
@@ -118,6 +118,9 @@ int main(int argc, char *argv[]) {
         }
 
         /* Initialize C --> C=0 everyone its own part*/
+#ifdef _USE_OPENMP_
+      #pragma omp parallel for shared(C) private(i,j) schedule (static, 10)
+#endif
         for (i=0; i<NFPGA; i++) {
                 for (j=0; j<N; j++) {
                         C[i][j] = 0.0;

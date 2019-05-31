@@ -8,11 +8,11 @@ help:
 	@echo "Use \`make <target>\` where <target> is one of"
 	@echo "  help     display this help message"
 	@echo "  clean   clean the project"
-	@echo "  run  CCODE=c_code  [NNODES=X]   execute the code c_code (defaul main.c) with optional numer of nodes (Default 2)"
-
+	@echo "  all     compile all .c files"
+	@echo "  code_name compile codename.c"
 
 #
-OPT = -D_MMX_=8
+OPT = -D_MMX_=256
 #-----  Debug
 OPT += # -D_DEBUG_
 #----------------------------------------------------------------------
@@ -28,32 +28,33 @@ OPTIMIZE      = -O3
 OPTIMIZE     += -march=native # -Winline -finline-functions -Wextra
 OPTIMIZE     += -ftree-vectorize
 DEBUG        += # -ggdb
-VERBOSE      += -Wall -v
+VERBOSE      += # -Wall -v
+SOURCES       = $(wildcard *.c)
 OBJECTS       = $(SOURCES:.c=.o)
 
 
 #---------------------------------------------------------------------#
-SYSTYPE      =  Exabed
+SYSTYPE      =  'hotcat'
 
 #--------------------------- SYSTEM setup ----------------------------#
 
 
-ifeq ($(SYSTYPE), 'exabed')
-# OpenCL path
-
-
-endif
 
 ifeq ($(SYSTYPE), 'hotcat')
-#
- CC        = mpicc
- CFLAGS    =
- LIBS      =
- LIBSDIR   =
- INCLUDE   =
- INCDIR    =
+CC        = mpicc
+CFLAGS    =
+LIBS      = -lopenblas -lpthread -lgfortran
+LIBSDIR   = -L$(OpenBLAS_LIB) -L$(MPI_LIB)
+INCDIR    = -I$(MPI_INCLUDE) -I$(OpenBLAS_INC)
 endif
 
+ifeq ($(SYSTYPE), 'fpga')
+CC        = mpicc
+CFLAGS    =
+LIBS      =
+LIBSDIR   = -L$(MPI_LIB)
+INCDIR    = -I$(MPI_INCLUDE)
+endif
 
 .PHONY: all clean info test debug
 
@@ -66,7 +67,8 @@ $(PROG): $(OBJECTS)
 	@echo ' '
 
 %.o: %.c
-	$(CC) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  -I./include -c $< -o $@
+	@echo $(SYSTYPE)
+	$(CC) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR)  -c $< -o $@
 
 
 
