@@ -30,8 +30,6 @@ int main(int argc, char *argv[]) {
         MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
         int N = world_size * NFPGA;
-        int numThreads = omp_get_num_threads();
-
         /*
          * Memory allocation
          *
@@ -46,7 +44,16 @@ int main(int argc, char *argv[]) {
                 printf("----------------------------------------\n");
                 printf("N Matrix = %d \n", N);
                 printf("N Local  = %d \n", NFPGA);
+      #ifdef _USE_OPENMP_
+                int numThreads=1;
+                #pragma omp parallel
+                {
+                   #pragma omp Master
+                   numThreads = omp_get_num_threads();
+                }
                 printf ("Using %d OMP threads.\n", numThreads);
+
+        #endif
                 tmp = (double *) malloc (sizeof(double ) * N * N);
                 A = (double **) malloc (sizeof(double *) * N);
                 for (int i = 0; i < N; i++)
