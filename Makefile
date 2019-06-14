@@ -42,6 +42,7 @@ SYSTYPE      =  'hotcat'
 
 ifeq ($(SYSTYPE), 'hotcat')
 CC        = mpicc
+CXX				= gcc
 CFLAGS    =
 LIBS      = -lopenblas -lpthread -lgfortran
 LIBSDIR   = -L$(OpenBLAS_LIB) -L$(MPI_LIB)
@@ -58,7 +59,7 @@ endif
 
 .PHONY: all clean info test debug
 
-all: $(PROG) $(OBJECTS) # $(ASSEMBLER)
+#all: $(PROG) $(OBJECTS) # $(ASSEMBLER)
 
 $(PROG): $(OBJECTS)
 	$(CC) $(DEBUG) $(OPTIMIZE) $^ -o $@  $(LIBS)
@@ -71,6 +72,9 @@ $(PROG): $(OBJECTS)
 
 %: %.o
 	$(CC) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $< -o $@
+
+dgemm_serial: dgemm_serial.c Makefile
+	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) dgemm_serial.c -o dgemm_serial
 
 clean:
 	rm -rf $(PROG) $(OBJECTS) $(ASSEMBLER)
