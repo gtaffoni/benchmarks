@@ -5,8 +5,7 @@
 #include <cblas.h>
 #define T 11
 
-int dgemm(char *ta, char *tb, int *M, int *N, int *K, double *alpha, double **A, int *LDA, double **B,
-  int *LDB, double *beta, double **C, int *LDC, double **D);
+
 void print_matrix(double **A, int *M, int *N);
 
 int main(int argc, char *argv[]) {
@@ -131,7 +130,6 @@ int main(int argc, char *argv[]) {
         /* Distribue B */
         MPI_Bcast(B[0], N*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,&NFPGA,&N,&N,&alpha,A, &NFPGA, B, &N,&N,C,&N);
-        dgemm(&ta, &tb, &M, &N, &N, &alpha, A, &N, B, &N, &beta, D, &N, C);
 
 /*  Master collects data from slaves, we are not using all_gather */
         if (world_rank == 0) {

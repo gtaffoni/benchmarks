@@ -9,6 +9,14 @@ int dgemm(int *M, int *N, int *K, double *alpha, double **A, double **B,
 
 void print_matrix(double **A, int *M, int *N);
 
+
+/*
+ *  Parallel DGEMM function.
+ *
+ *  D = alpha * A * B + beta * C
+ *
+ */
+ 
 int main(int argc, char *argv[]) {
         double **A, **B, **C, **D;
         double alpha=1.0, beta=0.5;

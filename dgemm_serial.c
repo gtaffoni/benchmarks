@@ -9,7 +9,7 @@ void print_matrix(double **A, int *M, int *N);
 
 
 /*
- *  DGEMM function.
+ *  Serial DGEMM function.
  *
  *  D = alpha * A * B + beta * C
  *
@@ -47,21 +47,21 @@ int main(int argc, char *argv[]) {
         printf("----------------------------------------\n");
         printf("N Matrix = %d \n", N);
         printf("N Local  = %d \n", NFPGA);
-      #ifdef _USE_OPENMP_
+#ifdef _USE_OPENMP_
         int numThreads=1;
-                #pragma omp parallel
+        #pragma omp parallel
         {
-                   #pragma omp Master
+        #pragma omp Master
                 numThreads = omp_get_num_threads();
         }
         printf ("Using %d OMP threads.\n", numThreads);
 
-        #endif
+#endif
         {
-          tmp = (double *) malloc (sizeof(double ) * N * N);
-          A = (double **) malloc (sizeof(double *) * N);
-          for (int i = 0; i < N; i++)
-                  A[i] = &tmp[i * N];
+                tmp = (double *) malloc (sizeof(double ) * N * NFPGA);
+                A = (double **) malloc (sizeof(double *) * NFPGA);
+                for (i = 0; i < NFPGA; i++)
+                        A[i] = &tmp[i * N];
         }
 
         {
@@ -72,49 +72,49 @@ int main(int argc, char *argv[]) {
         }
 
         {
-                tmp = (double *) malloc (sizeof(double ) * N * N);
-                C = (double **) malloc (sizeof(double *) * N);
-                for (i = 0; i < N; i++)
+                tmp = (double *) malloc (sizeof(double ) * N * NFPGA);
+                C = (double **) malloc (sizeof(double *) * NFPGA);
+                for (i = 0; i < NFPGA; i++)
                         C[i] = &tmp[i * N];
         }
 
-{
-        tmp = (double *) malloc (sizeof(double ) * N * N);
-        D = (double **) malloc (sizeof(double *) * N);
-        for (i = 0; i < N; i++)
-                D[i] = &tmp[i * N];
-}
+        {
+                tmp = (double *) malloc (sizeof(double ) * N * NFPGA);
+                D = (double **) malloc (sizeof(double *) * NFPGA);
+                for (i = 0; i < NFPGA; i++)
+                        D[i] = &tmp[i * N];
+        }
 
         /*
          * Matrix initialization A=1., B=1. and D=1.
          * could be done with random numbers
          */
 #ifdef _USE_OPENMP_
-        #pragma omp parallel for shared(A,B,D) private(i,j) schedule (static, 10)
+        #pragma omp parallel for shared(A,B,C) private(i,j) schedule (static, 10)
 #endif
         for (int i=0; i<N; i++) {
                 for (int j=0; j<N; j++) {
 #ifdef _RANDOM_
                         A[i][j] = rand() % 101 - 50;;
                         B[i][j] = rand() % 101 - 50;;
-                        D[i][j] = rand() % 101 - 50;;
+                        C[i][j] = rand() % 101 - 50;;
 #else
                         A[i][j] = 1.0;
                         B[i][j] = 1.0;
-                        D[i][j] = 1.0;
+                        C[i][j] = 1.0;
 
 #endif
                 }
         }
 
 
-        /* Initialize C --> C=0 everyone its own part*/
+        /* Initialize D --> D=0 everyone its own part*/
 #ifdef _USE_OPENMP_
-      #pragma omp parallel for shared(C) private(i,j) schedule (static, 10)
+      #pragma omp parallel for shared(D) private(i,j) schedule (static, 10)
 #endif
         for (i=0; i<NFPGA; i++) {
                 for (j=0; j<N; j++) {
-                        C[i][j] = 0.0;
+                        D[i][j] = 0.0;
                 }
         }
 
