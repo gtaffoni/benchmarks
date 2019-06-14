@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
 
         tmp = (double *) malloc (sizeof(double ) * N * N);
-        B = (double **) malloc (sizeof(double *) * N);
+        B   = (double **) malloc (sizeof(double *) * N);
         for (i = 0; i < N; i++)
                 B[i] = &tmp[i * N];
 
@@ -101,36 +101,36 @@ int main(int argc, char *argv[]) {
         }
 
         /*
-         * Matrix initialization A=1., B=1. and D=1.
+         * Matrix initialization A=1., B=1. and C=1.
          * could be done with random numbers
          */
         if (world_rank == 0) {
 #ifdef _USE_OPENMP_
-        #pragma omp parallel for shared(A,B,D) private(i,j) schedule (static, 10)
+        #pragma omp parallel for shared(A,B,C) private(i,j) schedule (static, 10)
 #endif
                 for (int i=0; i<N; i++) {
                         for (int j=0; j<N; j++) {
 #ifdef _RANDOM_
                                 A[i][j] = rand() % 101 - 50;;
                                 B[i][j] = rand() % 101 - 50;;
-                                D[i][j] = rand() % 101 - 50;;
+                                C[i][j] = rand() % 101 - 50;;
 #else
                                 A[i][j] = 1.0;
                                 B[i][j] = 1.0;
-                                D[i][j] = 1.0;
+                                C[i][j] = 1.0;
 
 #endif
                         }
                 }
         }
 
-        /* Initialize C --> C=0 everyone its own part*/
+        /* Initialize D --> D=0 everyone its own part*/
 #ifdef _USE_OPENMP_
-      #pragma omp parallel for shared(C) private(i,j) schedule (static, 10)
+      #pragma omp parallel for shared(D) private(i,j) schedule (static, 10)
 #endif
         for (i=0; i<NFPGA; i++) {
                 for (j=0; j<N; j++) {
-                        C[i][j] = 0.0;
+                        D[i][j] = 0.0;
                 }
         }
 
@@ -145,36 +145,36 @@ int main(int argc, char *argv[]) {
 
 
         if (world_rank == 0) {
-                /* send A and D */
+                /* send A and C */
                 int offset = NFPGA;
                 int numElements = NFPGA * N;
                 for (i=1; i<world_size; i++) {
                         MPI_Send(A[offset], numElements, MPI_DOUBLE, i, T, MPI_COMM_WORLD);
-                        MPI_Send(D[offset], numElements, MPI_DOUBLE, i, T, MPI_COMM_WORLD);
+                        MPI_Send(C[offset], numElements, MPI_DOUBLE, i, T, MPI_COMM_WORLD);
                         offset += NFPGA;
                 }
         }
         else {
                 /* receive  A and D */
                 MPI_Recv(A[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                MPI_Recv(D[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(C[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
         /* Distribue B */
         MPI_Bcast(B[0], N*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        dgemm(&NFPGA, &N, &N, &alpha, A, B, &beta, D, C);
+        dgemm(&NFPGA, &N, &N, &alpha, A, B, &beta, C, D);
 
 /*  Master collects data from slaves, we are not using all_gather */
         if (world_rank == 0) {
                 int offset = NFPGA;
                 int numElements = NFPGA * N;
                 for (i=1; i<world_size; i++) {
-                        MPI_Recv(C[offset], numElements, MPI_DOUBLE, i, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        MPI_Recv(D[offset], numElements, MPI_DOUBLE, i, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                         offset += NFPGA;
                 }
         }
         else {
-                MPI_Send(C[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD);
+                MPI_Send(D[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD);
         }
 
 /* End of computation */
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef _DEBUG_
         if (world_rank == 0 && N < 10) {
-                print_matrix(C, &N, &N);
+                print_matrix(D, &N, &N);
         }
 #endif
         MPI_Finalize();
