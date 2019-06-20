@@ -1,6 +1,10 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+#define TCPU_TIME (clock_gettime( id, &ts ), (double)ts.tv_sec +	\
+		   (double)ts.tv_nsec * 1e-9)
 
 int dgemm(int *M, int *N, int *K, double *alpha, double **A, double **B,
           double *beta, double **C, double **D);
@@ -19,7 +23,6 @@ int main(int argc, char *argv[]) {
         double **A, **B, **C, **D;
         double alpha=1.0, beta=1.0;
         double *tmp;
-        double startTime = 0.0;
         #ifdef _MMX_
         int NFPGA=_MMX_;
         #else
@@ -27,6 +30,9 @@ int main(int argc, char *argv[]) {
         #endif
         int i;
         int j;
+
+        struct timespec ts;
+        clockid_t       id = CLOCK_PROCESS_CPUTIME_ID;
 
 
 
@@ -118,17 +124,18 @@ int main(int argc, char *argv[]) {
                 }
         }
 
-
-        dgemm(&NFPGA, &N, &N, &alpha, A, B, &beta, D, C);
-
+        printf("Begin DGEMM.\n");
+        double startTime = TCPU_TIME;
+        dgemm(&NFPGA, &N, &N, &alpha, A, B, &beta, C, D);
+        double endTime = TCPU_TIME;
 
         printf("End Computation\n");
-//                double duration = endTime-startTime;
+        double duration = endTime-startTime;
         /* VERIFY THIS */
         /* DGEMM flop = 2*M*N*K + 3*M*N (see defintion of M, N, K below) in our case M=N=K*/
-//                double gflops = 2.0 * N * N * N + 3.0 * N * N;
-//                printf("Execution Time =  %f\n", duration);
-//                printf("GFLOPs         =  %f\n", gflops/duration * 1.0e-6);
+        double gflops = 2.0 * N * N * N + 3.0 * N * N;
+        printf("Execution Time =  %e [sec]\n", duration);
+        printf("GFLOPs         =  %f\n", gflops/duration * 1.0e-6);
 
 
 
