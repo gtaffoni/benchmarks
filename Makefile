@@ -12,15 +12,15 @@ help:
 	@echo "  code_name compile codename.c"
 
 #
-OPT = -D_MMX_=256
+OPT = -D_MMX_=4
 #-----  Debug
-OPT += # -D_DEBUG_
+OPT += -D_DEBUG_
 #----------------------------------------------------------------------
 #-----  OpenMP
 OPT += -D_USE_OPENMP_ -fopenmp
 #----------------------------------------------------------------------
 #-----  OpenBlas
-OPT += # -D_OPEN_BLAS_
+OPT += -D_OPEN_BLAS_
 
 # Set the compiler options                                            #
 #
@@ -50,7 +50,7 @@ INCDIR    = -I$(MPI_INCLUDE) -I$(OpenBLAS_INC)
 endif
 
 ifeq ($(SYSTYPE), 'fpga')
-CC        = mpicc
+CC        = mpiccc
 CFLAGS    =
 LIBS      =
 LIBSDIR   = -L$(MPI_LIB)
@@ -59,23 +59,31 @@ endif
 
 .PHONY: all clean info test debug
 
-#all: $(PROG) $(OBJECTS) # $(ASSEMBLER)
+PROG = dgemm_fpga dgemm_serial dgemm_open_blas
 
-$(PROG): $(OBJECTS)
-	$(CC) $(DEBUG) $(OPTIMIZE) $^ -o $@  $(LIBS)
-	@echo ' '
-	@echo 'Program' $(PROG) 'compiled for' $(SYSTYPE) 'machine'
-	@echo ' '
+all: $(PROG) $(OBJECTS) # $(ASSEMBLER)
+
 
 %.o: %.c
 	$(CC) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR)  -c $< -o $@
 
-%: %.o
-	$(CC) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $< -o $@
+
+dgemm_open_blas: dgemm_open_blas.o Makefile
+	$(CC) $(DEBUG) $(OPTIMIZE) $(LIBSDIR) $(OPT)  $< -o $@  $(LIBS)
+	@echo 'Program compiled for' $(SYSTYPE) 'machine'
+
+dgemm_open_blas_s: dgemm_open_blas_s.c Makefile
+	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) $(LIBSDIR) $(LIBS)  dgemm_open_blas_s.c -o dgemm_open_blas_s
+	@echo 'Program compiled for' $(SYSTYPE) 'machine'
+
+
+dgemm_fpga: dgemm_fpga.o Makefile
+	$(CC) $(DEBUG) $(OPTIMIZE) $(LIBSDIR) $(OPT)  $< -o $@  $(LIBS)
+	@echo 'Program compiled for' $(SYSTYPE) 'machine'
 
 dgemm_serial: dgemm_serial.c Makefile
 	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) dgemm_serial.c -o dgemm_serial
-
+	@echo 'Program compiled for' $(SYSTYPE) 'machine'
 clean:
 	rm -rf $(PROG) $(OBJECTS) $(ASSEMBLER)
 

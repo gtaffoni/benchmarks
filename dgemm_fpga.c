@@ -16,7 +16,7 @@ void print_matrix(double **A, int *M, int *N);
  *  D = alpha * A * B + beta * C
  *
  */
- 
+
 int main(int argc, char *argv[]) {
         double **A, **B, **C, **D;
         double alpha=1.0, beta=0.5;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
                 }
         }
         else {
-                /* receive  A and D */
+                /* receive  A and C */
                 MPI_Recv(A[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Recv(C[0], NFPGA * N, MPI_DOUBLE, 0, T, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
                 /* DGEMM flop = 2*M*N*K + 3*M*N (see defintion of M, N, K below) in our case M=N=K*/
                 double gflops = 2.0 * N * N * N + 3.0 * N * N;
                 printf("Execution Time =  %f\n", duration);
-                printf("GFLOPs         =  %f\n", gflops/duration * 1.0e-6);
+                printf("GFLOPs         =  %f\n", gflops/duration * 1.0e-9);
         }
 
 

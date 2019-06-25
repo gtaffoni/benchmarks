@@ -135,13 +135,14 @@ int main(int argc, char *argv[]) {
         /* DGEMM flop = 2*M*N*K + 3*M*N (see defintion of M, N, K below) in our case M=N=K*/
         double gflops = 2.0 * N * N * N + 3.0 * N * N;
         printf("Execution Time =  %e [sec]\n", duration);
-        printf("GFLOPs         =  %f\n", gflops/duration * 1.0e-6);
+        printf("GFLOPs         =  %f\n", gflops/duration * 1.0e-9);
 
 
 
 #ifdef _DEBUG_
-
-        print_matrix(C, &N, &N);
+if ( N < 10) {
+        print_matrix(D, &N, &N);
+}
 
 #endif
         return 0;
