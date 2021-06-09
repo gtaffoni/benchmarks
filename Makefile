@@ -32,10 +32,26 @@ VERBOSE      += # -Wall -v
 SOURCES       = $(wildcard *.c)
 OBJECTS       = $(SOURCES:.c=.o)
 
+#---------------------------------------------------------------------#
+SYSTYPE      =  'gpu'
+
+#--------------------------- SYSTEM setup ----------------------------#
+
+
+ifeq ($(SYSTYPE), 'gpu')
+CC        = nvc
+CXX	  = nvc
+CFLAGS    =
+LIBS      =  -lgfortran
+LIBSDIR   =
+OPTIMIZE  = -O0
+INCDIR    =
+OPT       = -D_MMX_=4 -D_DEBUG_ -D_USE_OPENMP_ -mp
+endif
+
 
 #---------------------------------------------------------------------#
 SYSTYPE      =  'hotcat'
-
 #--------------------------- SYSTEM setup ----------------------------#
 
 
@@ -59,7 +75,7 @@ endif
 
 .PHONY: all clean info test debug
 
-PROG = dgemm_fpga dgemm_serial dgemm_open_blas
+PROG = dgemm_fpga dgemm_gpu dgemm_serial dgemm_open_blas
 
 all: $(PROG) $(OBJECTS) # $(ASSEMBLER)
 
@@ -69,20 +85,24 @@ all: $(PROG) $(OBJECTS) # $(ASSEMBLER)
 
 
 dgemm_open_blas: dgemm_open_blas.o Makefile
-	$(CC) $(DEBUG) $(OPTIMIZE) $(LIBSDIR) $(OPT)  $< -o $@  $(LIBS)
+	$(CC) $(DEBUG) $(OPTIMIZE) $(LIBSDIR) $(OPT)  $< -o $@.x  $(LIBS)
 	@echo 'Program compiled for' $(SYSTYPE) 'machine'
 
 dgemm_open_blas_s: dgemm_open_blas_s.c Makefile
-	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) $(LIBSDIR) $(LIBS)  dgemm_open_blas_s.c -o dgemm_open_blas_s
+	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) $(LIBSDIR) $(LIBS)  dgemm_open_blas_s.c -o dgemm_open_blas_s.x
 	@echo 'Program compiled for' $(SYSTYPE) 'machine'
 
 
 dgemm_fpga: dgemm_fpga.o Makefile
-	$(CC) $(DEBUG) $(OPTIMIZE) $(LIBSDIR) $(OPT)  $< -o $@  $(LIBS)
+	$(CC) $(DEBUG) $(OPTIMIZE) $(LIBSDIR) $(OPT)  $< -o $@.x  $(LIBS)
 	@echo 'Program compiled for' $(SYSTYPE) 'machine'
 
+dgemm_gpu: dgemm_gpu.c Makefile
+		$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) dgemm_gpu.c -o dgemm_gpu.x
+		@echo 'Program compiled for' $(SYSTYPE) 'machine'
+
 dgemm_serial: dgemm_serial.c Makefile
-	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) dgemm_serial.c -o dgemm_serial
+	$(CXX) $(VERBOSE) $(DEBUG) $(OPTIMIZE) $(CFLAGS) $(OPT)  $(INCDIR) dgemm_serial.c -o dgemm_serial.x
 	@echo 'Program compiled for' $(SYSTYPE) 'machine'
 clean:
 	rm -rf $(PROG) $(OBJECTS) $(ASSEMBLER)
